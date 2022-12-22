@@ -75,8 +75,10 @@ nest::Compartment::Compartment( const long compartment_index,
   updateValue< double >( compartment_params, names::g_C, gc );
   updateValue< double >( compartment_params, names::g_L, gl );
   updateValue< double >( compartment_params, names::e_L, el );
+  updateValue< double >( compartment_params, names::V_comp, v_comp );
 
-  v_comp = el;
+  if(!updateValue< double >( compartment_params, names::V_comp, v_comp ))
+    v_comp = el;
 
   compartment_currents = CompartmentCurrents( compartment_params );
 }
@@ -112,6 +114,14 @@ nest::Compartment::get_recordables()
 void
 nest::Compartment::construct_matrix_element( const long lag )
 {
+  bool debug = false;
+
+  if(debug){
+    const long compartment_index = Compartment::comp_index;
+    printf("----------------------------------\n");
+    printf("compartment = %ld ---- V = %f ---- lag = %ld\n", compartment_index, v_comp, lag);
+  }
+
   // matrix diagonal element
   gg = gg0;
 
@@ -130,6 +140,10 @@ nest::Compartment::construct_matrix_element( const long lag )
   // right hand side
   ff = ( ca__div__dt - gl__div__2 ) * v_comp + gl__times__el;
 
+  if(debug){
+    printf("i_leak_plus_Cm_plus_el = %f\n", ff);
+  }
+
   if ( parent )
   {
     ff -= gc__div__2 * ( v_comp - parent->v_comp );
@@ -146,7 +160,13 @@ nest::Compartment::construct_matrix_element( const long lag )
   ff += gi.second;
 
   // add input current
+  double ff_before = ff;
   ff += currents.get_value( lag );
+  if(debug){
+    printf("i_rec_chan = %f\n",gi.second);
+    printf("i_input = %f\n", ff-ff_before);
+    printf("i_TOTAL = %f\n", ff);
+  }
 }
 
 

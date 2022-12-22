@@ -562,6 +562,7 @@ const Name V_T( "V_T" );
 const Name V_T_star( "V_T_star" );
 const Name V_act_NMDA( "V_act_NMDA" );
 const Name V_clamp( "V_clamp" );
+const Name V_comp( "V_comp" );
 const Name V_epsp( "V_epsp" );
 const Name V_m( "V_m" );
 const Name V_min( "V_min" );

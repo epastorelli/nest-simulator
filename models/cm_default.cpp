@@ -47,6 +47,7 @@ nest::cm_default::cm_default()
   , syn_buffers_( 0 )
   , logger_( *this )
   , V_th_( -55.0 )
+  , V_reset_( -65.0 )
 {
   recordablesMap_.create( *this );
   recordables_values.resize( 0 );
@@ -58,6 +59,7 @@ nest::cm_default::cm_default( const cm_default& n )
   , syn_buffers_( n.syn_buffers_ )
   , logger_( *this )
   , V_th_( n.V_th_ )
+  , V_reset_( n.V_reset_ )
 {
   recordables_values.resize( 0 );
 }
@@ -70,6 +72,7 @@ void
 cm_default::get_status( DictionaryDatum& statusdict ) const
 {
   def< double >( statusdict, names::V_th, V_th_ );
+  def< double >( statusdict, names::V_reset, V_reset_ );
   ArchivingNode::get_status( statusdict );
 
   // add all recordables to the status dictionary
@@ -101,6 +104,7 @@ void
 nest::cm_default::set_status( const DictionaryDatum& statusdict )
 {
   updateValue< double >( statusdict, names::V_th, V_th_ );
+  updateValue< double >( statusdict, names::V_reset, V_reset_ );
   ArchivingNode::set_status( statusdict );
 
   /**
@@ -304,8 +308,18 @@ nest::cm_default::pre_run_hook()
 void
 nest::cm_default::update( Time const& origin, const long from, const long to )
 {
+  bool debug = false;
+  bool ifadex = true;
   assert( to >= 0 and ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
+
+  if(debug){
+    //long var = (long)(origin.get_steps());
+    long int var = origin.get_ms();
+    printf("-----------------------------------------\n");
+    printf("------------------- simulated ms = %ld     from = %ld to = %ld\n",var,from,to);
+    printf("-----------------------------------------\n");
+  }
 
   for ( long lag = from; lag < to; ++lag )
   {
@@ -318,6 +332,9 @@ nest::cm_default::update( Time const& origin, const long from, const long to )
     if ( c_tree_.get_root()->v_comp >= V_th_ and v_0_prev < V_th_ )
     {
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+
+      if(ifadex)
+	c_tree_.get_root()->v_comp = V_reset_;
 
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );

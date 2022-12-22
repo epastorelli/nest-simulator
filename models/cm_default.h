@@ -286,6 +286,9 @@ private:
   DynamicUniversalDataLogger< cm_default > logger_;
 
   double V_th_;
+
+  double refract_ = 0.;
+  double V_reset_;  
 };
 
 
