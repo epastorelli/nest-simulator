@@ -21,8 +21,8 @@
  */
 #include "cm_compartmentcurrents.h"
 bool debug = false;
-bool Larkum_Ca = true;    // Larkum vs Hay/Branco Ca current dynamics
-bool Hay_K_Ca = true;     // Hay vs Branco K_Ca current dynamics
+bool Larkum_Ca = false;    // Larkum vs Hay/Branco Ca current dynamics
+bool Hay_K_Ca = false;     // Hay vs Branco K_Ca current dynamics
 
 nest::Na::Na()
   // initialization state state variables
@@ -250,14 +250,13 @@ nest::Ca::Ca()
   , tau_m_(0.0)
   , tau_h_(0.0)
   , tau_decay_Ca_( 120 )
-  , phi_( 1. )
+  , scale_( 1. )
   , v_rest_( 0.0 )
-  , Ca_0_( 0.0001 )
     //, g_AHP_( 0.0 )
     //, e_K_AHP_( -90 )
     //, Ca_conc_(0.0)
     //, tau_K_Ca_(80.0)
-    //, phi_( 1. )
+    //, scale_( 1. )
 {
 }
 nest::Ca::Ca( const DictionaryDatum& channel_params )
@@ -273,14 +272,13 @@ nest::Ca::Ca( const DictionaryDatum& channel_params )
   , tau_m_(0.0)
   , tau_h_(0.0)
   , tau_decay_Ca_( 120 )
-  , phi_( 1. )
+  , scale_( 1. )
   , v_rest_( 0.0 )
-  , Ca_0_( 0.0001 )    
     //, g_AHP_(0.0 )
     //, e_K_AHP_( -90 )
     //, Ca_conc_(0.0)
     //, tau_K_Ca_(80.0)
-    //, phi_( 1. )
+    //, scale_( 1. )
 {
   // update AHP channel parameters
   if ( channel_params->known( "gbar_Ca" ) )
@@ -315,17 +313,13 @@ nest::Ca::Ca( const DictionaryDatum& channel_params )
   {
     tau_decay_Ca_ = getValue< double >( channel_params, "tau_decay_Ca" );
   }
-  if ( channel_params->known( "phi" ) )
+  if ( channel_params->known( "scale" ) )
   {
-    phi_ = getValue< double >( channel_params, "phi" );
+    scale_ = getValue< double >( channel_params, "scale" );
   }
   if ( channel_params->known( "e_L" ) )
   {
     v_rest_ = getValue< double >( channel_params, "e_L" );
-  }
-  if ( channel_params->known( "Ca_0" ) )
-  {
-    Ca_0_ = getValue< double >( channel_params, "Ca_0" );
   }
 
   if(Larkum_Ca)
@@ -371,6 +365,7 @@ nest::Ca::f_numstep( const double v_comp )
   double T = 309.15;
   double F = 96489;
   double Ca_o = 2.;
+  double Ca_0_ = 0.0001;    // mM (from Hay et al. 2011 PlosCompBio and Gerstner 2014 book)
 
   if ( gbar_Ca_ > 1e-9 )
   {
@@ -449,7 +444,7 @@ nest::Ca::f_numstep( const double v_comp )
     // Calcium concentration
     // Dynamics from https://senselab.med.yale.edu/ModelDB/ShowModel?model=140828&file=/Branco_2010/mod.files/cad.mod#tabs-2 and from Hay et al. 2011
     double Ca_Pump_ = (Ca_conc_ - Ca_0_) * std::exp( -dt / tau_decay_Ca_) + Ca_0_;
-    double Ca_Influx_ = phi_ * I_Ca_ * dt;
+    double Ca_Influx_ = scale_ * I_Ca_ * dt;
     if (Ca_Influx_ <= 0.0)
       Ca_Influx_ = 0.0;
     Ca_conc_ = Ca_Pump_ + Ca_Influx_;
@@ -461,7 +456,7 @@ nest::Ca::f_numstep( const double v_comp )
     double p_Ca_conc_ = std::exp( -dt / tau_decay_Ca_ );
     Ca_conc_ *= p_Ca_conc_;
     Ca_conc_ += ( 1. - p_Ca_conc_ ) * Ca_0_;
-    double Ca_Influx_ = phi_ * I_Ca_ * dt;
+    double Ca_Influx_ = scale_ * I_Ca_ * dt;
     if (Ca_Influx_ <= 0.0)
       Ca_Influx_ = 0.0;
     Ca_conc_ += Ca_Influx_;
@@ -483,7 +478,7 @@ nest::Ca::f_numstep( const double v_comp )
     // Compute AHP current
     if ( g_AHP_ > 1e-9 ){
       Ca_conc_ *= std::exp( -dt / tau_K_Ca_);
-      Ca_conc_ += phi_ * m_Ca_ * h_Ca_ * dt;
+      Ca_conc_ += scale_ * m_Ca_ * h_Ca_ * dt;
       g_val += Ca_conc_ * g_AHP_ / 2.;
       i_val += Ca_conc_ * g_AHP_ * ( e_K_AHP_ - v_comp / 2. );
       if (debug){
@@ -517,12 +512,8 @@ nest::K_Ca::K_Ca()
   , tau_m_(0.0)
   , tau_h_(0.0)
   , tau_decay_Ca_( 120 )
-  , phi_( 1. )
+  , scale_( 1. )
   , v_rest_( 0.0 )
-  , tau_m_K_Ca_( 0.0 )
-  , Ca_th_( 0.00043 )
-  , Ca_0_( 0.0001 )
-  , exp_K_Ca_( 4.8 )
 {
 }
 nest::K_Ca::K_Ca( const DictionaryDatum& channel_params )
@@ -542,12 +533,8 @@ nest::K_Ca::K_Ca( const DictionaryDatum& channel_params )
   , tau_m_(0.0)
   , tau_h_(0.0)
   , tau_decay_Ca_( 120 )
-  , phi_( 1. )
+  , scale_( 1. )
   , v_rest_( 0.0 )
-  , tau_m_K_Ca_( 0.0 )
-  , Ca_th_( 0.00043 )
-  , Ca_0_( 0.0001 )
-  , exp_K_Ca_( 4.8 )
 {
   // update K_Ca channel parameters
   if ( channel_params->known( "gbar_K_Ca" ) )
@@ -590,29 +577,13 @@ nest::K_Ca::K_Ca( const DictionaryDatum& channel_params )
   {
     tau_decay_Ca_ = getValue< double >( channel_params, "tau_decay_Ca" );
   }
-  if ( channel_params->known( "phi" ) )
+  if ( channel_params->known( "scale" ) )
   {
-    phi_ = getValue< double >( channel_params, "phi" );
+    scale_ = getValue< double >( channel_params, "scale" );
   }
   if ( channel_params->known( "e_L" ) )
   {
     v_rest_ = getValue< double >( channel_params, "e_L" );
-  }
-  if ( channel_params->known( "tau_m_K_Ca" ) )
-  {
-    tau_m_K_Ca_ = getValue< double >( channel_params, "tau_m_K_Ca" );
-  }
-  if ( channel_params->known( "Ca_th" ) )
-  {
-    Ca_th_ = getValue< double >( channel_params, "Ca_th" );
-  }
-  if ( channel_params->known( "Ca_0" ) )
-  {
-    Ca_0_ = getValue< double >( channel_params, "Ca_0" );
-  }
-  if ( channel_params->known( "exp_K_Ca" ) )
-  {
-    exp_K_Ca_ = getValue< double >( channel_params, "exp_K_Ca" );
   }
 
   if(Larkum_Ca)
@@ -640,8 +611,7 @@ nest::K_Ca::K_Ca( const DictionaryDatum& channel_params )
   if(Hay_K_Ca)
     {
       // Dynamics from Hay et al. 2011, current I_SK
-      m_K_Ca_ = 1. / ( 1 + std::pow(Ca_th_/Ca_conc_,exp_K_Ca_));
-      tau_m_K_Ca_ = 1.;
+      m_K_Ca_ = 1. / ( 1 + std::pow(0.00043/Ca_conc_,4.8));
     }
   else
     {
@@ -649,7 +619,6 @@ nest::K_Ca::K_Ca( const DictionaryDatum& channel_params )
       double alpha_K_Ca = 0.01 * Ca_conc_;
       double beta_K_Ca = 0.02;
       m_K_Ca_ = alpha_K_Ca / (alpha_K_Ca + beta_K_Ca);
-      tau_m_K_Ca_ = 1 / (alpha_K_Ca + beta_K_Ca);
       }
 
 }
@@ -667,6 +636,8 @@ nest::K_Ca::f_numstep( const double v_comp )
 {
   const double dt = Time::get_resolution().get_ms();
   double g_val = 0., i_val = 0.;
+  double Ca_0_ = 0.0001;    // mM (from Hay et al. 2011 PlosCompBio and Gerstner 2014 book)
+  double Ca_th_ = 0.00043;  // Threshold for Ca channel opening
 
   double k = 1000;
   double R = 8.31441;
@@ -748,7 +719,7 @@ nest::K_Ca::f_numstep( const double v_comp )
     // Calcium concentration
     // Dynamics from https://senselab.med.yale.edu/ModelDB/ShowModel?model=140828&file=/Branco_2010/mod.files/cad.mod#tabs-2 and from Hay et al. 2011
     double Ca_Pump_ = (Ca_conc_ - Ca_0_) * std::exp( -dt / tau_decay_Ca_) + Ca_0_;
-    double Ca_Influx_ = phi_ * I_Ca_ * dt;
+    double Ca_Influx_ = scale_ * I_Ca_ * dt;
     if (Ca_Influx_ <= 0.0)
       Ca_Influx_ = 0.0;
     Ca_conc_ = Ca_Pump_ + Ca_Influx_;
@@ -760,7 +731,7 @@ nest::K_Ca::f_numstep( const double v_comp )
     double p_Ca_conc_ = std::exp( -dt / tau_decay_Ca_ );
     Ca_conc_ *= p_Ca_conc_;
     Ca_conc_ += ( 1. - p_Ca_conc_ ) * Ca_0_;
-    double Ca_Influx_ = phi_ * I_Ca_ * dt;
+    double Ca_Influx_ = scale_ * I_Ca_ * dt;
     if (Ca_Influx_ <= 0.0)
       Ca_Influx_ = 0.0;
     Ca_conc_ += Ca_Influx_;
@@ -770,7 +741,8 @@ nest::K_Ca::f_numstep( const double v_comp )
     if(Hay_K_Ca)
       {
 	// Dynamics from Hay et al. 2011, current I_SK
-	double m_inf_K_Ca_ = 1. / ( 1 + std::pow(Ca_th_/Ca_conc_,exp_K_Ca_));
+	double m_inf_K_Ca_ = 1. / ( 1 + std::pow(Ca_th_/Ca_conc_,4.8));
+	double tau_m_K_Ca_ = 1.;
 	double p_m_K_Ca = std::exp( -dt / tau_m_K_Ca_ );
 	m_K_Ca_ *= p_m_K_Ca;
 	m_K_Ca_ += ( 1. - p_m_K_Ca ) * m_inf_K_Ca_;
@@ -781,6 +753,7 @@ nest::K_Ca::f_numstep( const double v_comp )
 	double alpha_K_Ca = 0.01 * Ca_conc_;
 	double beta_K_Ca = 0.02;
 	double m_inf_K_Ca_ = alpha_K_Ca / (alpha_K_Ca + beta_K_Ca);
+	double tau_m_K_Ca_ = 1 / (alpha_K_Ca + beta_K_Ca);
 	double p_m_K_Ca = std::exp( -dt / tau_m_K_Ca_ );
 	m_K_Ca_ *= p_m_K_Ca;
 	m_K_Ca_ += ( 1. - p_m_K_Ca ) * m_inf_K_Ca_;

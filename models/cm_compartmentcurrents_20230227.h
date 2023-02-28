@@ -138,15 +138,14 @@ private:
   double tau_m_ = 0.0;
   double tau_h_ = 0.0;
   double tau_decay_Ca_ = 120;
-  double phi_ = 1.0;
+  double scale_ = 1.0;
   double v_rest_ = 0.0;
-  double Ca_0_ = 0.0001;            // [mM] (from Hay et al. 2011 PlosCompBio and Gerstner 2014 book)
   //double e_Ca_ = 0.0;
   //double g_AHP_ = 0.0;
   //double e_K_AHP_ = -90;
   //double Ca_conc_ = 0.0;
   //double tau_K_Ca_ = 80.0;
-  //double phi_ = 0.0;
+  //double scale_ = 0.0;
 
   // temperature factor for reaction rates
   //double q10_ = 1. / 3.21;
@@ -184,12 +183,8 @@ private:
   double tau_m_ = 0.0;
   double tau_h_ = 0.0;
   double tau_decay_Ca_ = 120;
-  double phi_ = 1.0;
+  double scale_ = 1.0;
   double v_rest_ = 0.0;
-  double tau_m_K_Ca_ = 0.0;
-  double Ca_th_ = 0.00043;          // [mM] Threshold for Ca channel opening
-  double Ca_0_ = 0.0001;            // [mM] (from Hay et al. 2011 PlosCompBio and Gerstner 2014 book)
-  double exp_K_Ca_ = 4.8;           // Exponential factor in K_Ca current using Hay et al. 2011 dyn
 
   // temperature factor for reaction rates
   //double q10_ = 1. / 3.21;
