@@ -773,7 +773,7 @@ private:
   double e_w_ = -90.0;              // mV
   double a_ = 0.0;                  // nS
   double b_ = 0.0;                  // pA
-  double g_w_ = 1.1;
+  double g_w_ = 1.0;
 
   // assigned variables
   double g_norm_ = 1.0;
