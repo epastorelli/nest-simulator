@@ -1616,6 +1616,7 @@ nest::ADAPT::ADAPT( const long syn_index )
   , e_w_( -90.0 )
   , a_( 0.0 )
   , b_( 0.0 )
+  , g_w_(1.0)
 {
   syn_idx = syn_index;
 
@@ -1628,6 +1629,7 @@ nest::ADAPT::ADAPT( const long syn_index, const DictionaryDatum& receptor_params
   , e_w_( -90.0 )
   , a_( 0.0 )
   , b_( 0.0 )
+  , g_w_(1.0)
 {
   syn_idx = syn_index;
 
@@ -1647,6 +1649,10 @@ nest::ADAPT::ADAPT( const long syn_index, const DictionaryDatum& receptor_params
   if ( receptor_params->known( "b" ) )
   {
     b_ = getValue< double >( receptor_params, "b" );
+  }
+  if ( receptor_params->known( "g_w" ) )
+  {
+    g_w_ = getValue< double >( receptor_params, "g_w" );
   }
 }
 
@@ -1675,8 +1681,8 @@ nest::ADAPT::f_numstep( const double v_comp, const long lag )
   
   if( (v_comp-E_K_) > 0.001)
     {
-      g_val += w_ / (2 * fabs(v_comp - E_K_)) ;
-      i_val += w_ / fabs(v_comp - E_K_) * (E_K_ - v_comp/2);
+      g_val += g_w_ * w_ / (2 * fabs(v_comp - E_K_)) ;
+      i_val += g_w_ * w_ / fabs(v_comp - E_K_) * (E_K_ - v_comp/2);
     }
   else
     {
